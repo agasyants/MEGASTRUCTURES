@@ -1,0 +1,188 @@
+extends CharacterBody3D
+
+# --- MOVEMENT SETTINGS ---
+var move_acceleration := 10.0        # how fast we accelerate toward input direction
+var move_max_speed := 6.0            # top walking speed
+var move_friction := 35.0            # how quickly we slow down when no input is given
+var air_control := 0.9               # how much control we have in the air
+var gravity := 24.0
+var jump_speed := 10.0
+var on_ground := false
+
+# --- PLATFORMER FEEL IMPROVEMENTS ---
+var coyote_time := 0.15              # seconds after leaving platform when you can still jump
+var coyote_timer := 0.0
+var jump_buffer_time := 0.1          # if you press jump slightly before landing
+var jump_buffer_timer := 0.0
+
+# --- MOUSE LOOK SETTINGS ---
+var mouse_sensitivity := 0.12
+var camera_pitch := 0.0
+var camera_pitch_min := -85.0
+var camera_pitch_max := 85.0
+
+# --- JETPACK SETTINGS ---
+var jetpack_fuel := 100.0
+var jetpack_fuel_max := 100.0
+var jetpack_thrust := 30.0              # force of thrust
+var first_fuel_consumption := 0.0
+var jetpack_fuel_consumption := 25.0    # fuel units per second
+var jetpack_recharge_rate := 20.0       # recharge speed on ground
+var jetpack_recharge_delay := 0.5       # delay before recharge starts
+var jetpack_recharge_timer := 0.0
+var jetpack_max_velocity := 20.0        # cap on total velocity when using jetpack
+var jetpack_min_fuel_to_activate := 20.0
+var is_using_jetpack := false
+var is_recharging := false
+
+@onready var cam := $Camera3D
+@onready var fuel_bar := $CanvasLayer/FuelBar  # add CanvasLayer > ProgressBar in scene
+
+func _ready() -> void:
+	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
+	
+	# setup fuel bar
+	if fuel_bar:
+		fuel_bar.max_value = 100.0
+		fuel_bar.value = 100.0
+
+func _unhandled_input(event: InputEvent) -> void:
+	if event is InputEventMouseMotion:
+		rotation.y -= deg_to_rad(event.relative.x * mouse_sensitivity)
+		camera_pitch -= event.relative.y * mouse_sensitivity
+		camera_pitch = clamp(camera_pitch, camera_pitch_min, camera_pitch_max)
+		cam.rotation.x = deg_to_rad(camera_pitch)
+
+func _input(event: InputEvent) -> void:
+	if event.is_action_pressed("jump"):
+		if coyote_timer > 0.0:
+			jump()
+		else:
+			start_jetpack()
+		get_viewport().set_input_as_handled()
+
+	elif event.is_action_released("jump"):
+		# Cut jump
+		if velocity.y > 0 and !is_using_jetpack:
+			# reduce upward velocity to make shorter jump
+			velocity.y *= 0.5
+		end_jetpack()
+		get_viewport().set_input_as_handled()
+
+func jump():
+	velocity.y = jump_speed
+	coyote_timer = 0.0
+	jump_buffer_timer = 0.0
+
+func start_jetpack():
+	if jetpack_fuel >= jetpack_min_fuel_to_activate:
+		jetpack_fuel -= first_fuel_consumption
+		is_recharging = false
+		is_using_jetpack = true
+		
+		if velocity.y < 0:
+			velocity.y *= 0.5
+
+func end_jetpack():
+	if is_using_jetpack:
+		is_using_jetpack = false
+
+func _physics_process(delta: float) -> void:
+	_update_timers(delta)
+	_apply_gravity(delta)
+	_apply_jetpack(delta)
+	_apply_movement(delta)
+	move_and_slide()
+
+func _process(_delta: float) -> void:
+	_update_ui()
+
+
+func _update_timers(delta: float) -> void:
+	# coyote time: grace period after leaving platform
+	if is_on_floor():
+		coyote_timer = coyote_time
+		if !on_ground:
+			on_ground = true
+			landed()
+	else:
+		coyote_timer -= delta
+		if on_ground:
+			on_ground = false
+	
+	# jump buffer: pressed jump slightly before landing
+	if Input.is_action_just_pressed("jump"):
+		jump_buffer_timer = jump_buffer_time
+	else:
+		jump_buffer_timer -= delta
+	
+	if is_recharging:
+		jetpack_recharge_timer += delta
+		if jetpack_recharge_timer >= jetpack_recharge_delay:
+			jetpack_fuel = min(jetpack_fuel + jetpack_recharge_rate * delta, jetpack_fuel_max)
+
+
+func _apply_gravity(delta: float) -> void:
+	if not is_on_floor():
+		velocity.y -= gravity * delta
+	else:
+		if velocity.y < 0.0:
+			velocity.y = 0.0
+		
+		# if jump was buffered, execute it immediately on landing
+		if jump_buffer_timer > 0.0:
+			velocity.y = jump_speed
+			jump_buffer_timer = 0.0
+			coyote_timer = 0.0
+
+func landed():
+	if !is_using_jetpack:
+		is_recharging = true
+
+func _apply_jetpack(delta: float) -> void:
+	if is_using_jetpack:
+		jetpack_recharge_timer = 0.0
+		# consume fuel
+		jetpack_fuel -= jetpack_fuel_consumption * delta
+		if jetpack_fuel <= 0:
+			end_jetpack()
+		jetpack_fuel = max(jetpack_fuel, 0.0)
+		
+		# apply thrust in camera look direction
+		var look_dir = -cam.global_transform.basis.z
+		var thrust_dir = look_dir.lerp(Vector3.UP, 0.8).normalized()
+		velocity += thrust_dir * jetpack_thrust * delta
+		
+		# cap maximum velocity to prevent infinite acceleration
+		if velocity.length() > jetpack_max_velocity:
+			velocity = velocity.normalized() * jetpack_max_velocity
+		
+		# TODO: add particle effects and sound here
+		# Example: $JetpackParticles.emitting = true
+		# Example: if not $JetpackSound.playing: $JetpackSound.play()
+
+
+func _apply_movement(delta: float) -> void:
+	var input_vec := Input.get_vector("ui_left", "ui_right", "ui_down", "ui_up")
+	var input_dir := Vector3.ZERO
+	
+	if input_vec.length() > 0.0:
+		var forward := -transform.basis.z
+		var right := transform.basis.x
+		input_dir = (forward * input_vec.y + right * input_vec.x).normalized()
+	
+	var accel := move_acceleration
+	if not is_on_floor():
+		accel *= air_control
+	
+	if input_dir != Vector3.ZERO:
+		velocity.x = move_toward(velocity.x, input_dir.x * move_max_speed, accel * delta)
+		velocity.z = move_toward(velocity.z, input_dir.z * move_max_speed, accel * delta)
+	else:
+		velocity.x = move_toward(velocity.x, 0.0, move_friction * delta)
+		velocity.z = move_toward(velocity.z, 0.0, move_friction * delta)
+
+
+func _update_ui() -> void:
+	if fuel_bar:
+		fuel_bar.value = (jetpack_fuel / jetpack_fuel_max) * 100.0

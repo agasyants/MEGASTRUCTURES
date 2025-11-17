@@ -1,0 +1,24 @@
+[gd_scene load_steps=3 format=3 uid="uid://b1bf3mrg51wxi"]
+
+[ext_resource type="Script" uid="uid://8qfsbuy55ivo" path="res://Player/Player.gd" id="1_3qydi"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_l2ndj"]
+
+[node name="Player" type="CharacterBody3D"]
+script = ExtResource("1_3qydi")
+
+[node name="Camera3D" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.892818, -0.011062145)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9976435, 0)
+shape = SubResource("CapsuleShape3D_l2ndj")
+
+[node name="CanvasLayer" type="CanvasLayer" parent="."]
+
+[node name="FuelBar" type="ProgressBar" parent="CanvasLayer"]
+offset_left = 15.0
+offset_top = 30.0
+offset_right = 52.0
+offset_bottom = 216.0
+fill_mode = 3
