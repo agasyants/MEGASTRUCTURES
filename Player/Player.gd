@@ -3,11 +3,16 @@ extends CharacterBody3D
 # --- MOVEMENT SETTINGS ---
 var move_acceleration := 10.0        # how fast we accelerate toward input direction
 var move_max_speed := 6.0            # top walking speed
-var move_friction := 35.0            # how quickly we slow down when no input is given
+var move_friction := 40.0            # how quickly we slow down when no input is given
+var air_friction := 9.0              # how quickly we slow down in air
 var air_control := 0.9               # how much control we have in the air
 var gravity := 24.0
 var jump_speed := 10.0
 var on_ground := false
+
+var vector := Vector3(0,1,0)
+var target_vector := Vector3(0,1,0)
+var rotator := 0.0
 
 # --- PLATFORMER FEEL IMPROVEMENTS ---
 var coyote_time := 0.15              # seconds after leaving platform when you can still jump
@@ -26,7 +31,7 @@ var jetpack_fuel := 100.0
 var jetpack_fuel_max := 100.0
 var jetpack_thrust := 30.0              # force of thrust
 var first_fuel_consumption := 0.0
-var jetpack_fuel_consumption := 25.0    # fuel units per second
+var jetpack_fuel_consumption := 45.0    # fuel units per second
 var jetpack_recharge_rate := 20.0       # recharge speed on ground
 var jetpack_recharge_delay := 0.5       # delay before recharge starts
 var jetpack_recharge_timer := 0.0
@@ -40,7 +45,6 @@ var is_recharging := false
 
 func _ready() -> void:
 	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
-	
 	# setup fuel bar
 	if fuel_bar:
 		fuel_bar.max_value = 100.0
@@ -48,7 +52,7 @@ func _ready() -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseMotion:
-		rotation.y -= deg_to_rad(event.relative.x * mouse_sensitivity)
+		rotator -= deg_to_rad(event.relative.x * mouse_sensitivity)
 		camera_pitch -= event.relative.y * mouse_sensitivity
 		camera_pitch = clamp(camera_pitch, camera_pitch_min, camera_pitch_max)
 		cam.rotation.x = deg_to_rad(camera_pitch)
@@ -65,14 +69,15 @@ func _input(event: InputEvent) -> void:
 		# Cut jump
 		if velocity.y > 0 and !is_using_jetpack:
 			# reduce upward velocity to make shorter jump
-			velocity.y *= 0.5
+			velocity.y *= 0.6
 		end_jetpack()
 		get_viewport().set_input_as_handled()
 
 func jump():
-	velocity.y = jump_speed
+	velocity = velocity + vector * jump_speed
 	coyote_timer = 0.0
 	jump_buffer_timer = 0.0
+	$Node3D.disable_boots()
 
 func start_jetpack():
 	if jetpack_fuel >= jetpack_min_fuel_to_activate:
@@ -80,27 +85,43 @@ func start_jetpack():
 		is_recharging = false
 		is_using_jetpack = true
 		
-		if velocity.y < 0:
-			velocity.y *= 0.5
+		if velocity.dot(vector) < 0:  # если движемся вниз относительно "вверх"
+			velocity = velocity.project(vector) * 0.4
 
 func end_jetpack():
 	if is_using_jetpack:
 		is_using_jetpack = false
 
 func _physics_process(delta: float) -> void:
+	_update_rotation(delta)
 	_update_timers(delta)
-	_apply_gravity(delta)
 	_apply_jetpack(delta)
 	_apply_movement(delta)
+	_apply_gravity(delta)
 	move_and_slide()
 
 func _process(_delta: float) -> void:
 	_update_ui()
 
+#func _update_rotation(delta:float):
+	#vector = vector.lerp(target_vector, delta*3).normalized()
+	#self.rotation = Vector3(0,0,0)
+	#var dir1 = basis.y
+	#var dir2 = vector
+	#var axis = dir1.cross(dir2)
+	#if axis != Vector3.ZERO:
+		#self.rotate(axis.normalized(), vector.angle_to(dir1))
+	#self.rotate(vector, rotator)
+
+func _update_rotation(delta: float):
+	vector = vector.lerp(target_vector, delta * 3).normalized()
+	var align_quat = Quaternion(Vector3.UP, vector)
+	var twist_quat = Quaternion(vector, rotator)
+	self.basis = Basis(twist_quat * align_quat)
 
 func _update_timers(delta: float) -> void:
 	# coyote time: grace period after leaving platform
-	if is_on_floor():
+	if is_on_floor() or $Node3D.boots_enabled:
 		coyote_timer = coyote_time
 		if !on_ground:
 			on_ground = true
@@ -124,7 +145,10 @@ func _update_timers(delta: float) -> void:
 
 func _apply_gravity(delta: float) -> void:
 	if not is_on_floor():
-		velocity.y -= gravity * delta
+		if $Node3D.boots_enabled:
+			velocity -=  vector * gravity * delta * 4
+		else:
+			velocity -=  vector * gravity * delta
 	else:
 		if velocity.y < 0.0:
 			velocity.y = 0.0
@@ -170,17 +194,27 @@ func _apply_movement(delta: float) -> void:
 		var forward := -transform.basis.z
 		var right := transform.basis.x
 		input_dir = (forward * input_vec.y + right * input_vec.x).normalized()
+		$Node3D.rotation.y = input_vec.angle() - PI/2
 	
 	var accel := move_acceleration
-	if not is_on_floor():
-		accel *= air_control
+	var friction := move_friction
 	
-	if input_dir != Vector3.ZERO:
-		velocity.x = move_toward(velocity.x, input_dir.x * move_max_speed, accel * delta)
-		velocity.z = move_toward(velocity.z, input_dir.z * move_max_speed, accel * delta)
+	if not on_ground:
+		accel *= air_control
+		friction = air_friction
+	
+	if $Node3D.boots_enabled:
+		if input_dir != Vector3.ZERO:
+			velocity = lerp(velocity, input_dir * move_max_speed, accel * delta)
+		else:
+			velocity = lerp(velocity, Vector3.ZERO, friction * delta)
 	else:
-		velocity.x = move_toward(velocity.x, 0.0, move_friction * delta)
-		velocity.z = move_toward(velocity.z, 0.0, move_friction * delta)
+		if input_dir != Vector3.ZERO:
+			velocity.x = move_toward(velocity.x, input_dir.x * move_max_speed, accel * delta)
+			velocity.z = move_toward(velocity.z, input_dir.z * move_max_speed, accel * delta)
+		else:
+			velocity.x = move_toward(velocity.x, 0.0, friction * delta)
+			velocity.z = move_toward(velocity.z, 0.0, friction * delta)
 
 
 func _update_ui() -> void:

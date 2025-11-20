@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://8san620le5t6"]
+
+[ext_resource type="Script" uid="uid://2vclfhlgouoc" path="res://Player/Hook/Rope.gd" id="1_1qov5"]
+
+[node name="Rope" type="Node3D"]
+script = ExtResource("1_1qov5")

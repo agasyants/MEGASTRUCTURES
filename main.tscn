@@ -18,19 +18,27 @@ glow_blend_mode = 4
 fog_enabled = true
 fog_mode = 1
 fog_light_color = Color(1, 1, 1, 1)
-fog_depth_begin = 5.0
-fog_depth_end = 40.0
+fog_density = 1.0
 volumetric_fog_enabled = true
-volumetric_fog_emission = Color(0.5370113, 0.5370113, 0.5370112, 1)
+volumetric_fog_density = 0.1
+volumetric_fog_emission = Color(0.427493, 0.42749307, 0.42749295, 1)
 volumetric_fog_gi_inject = 0.0
-volumetric_fog_anisotropy = 0.0
+volumetric_fog_anisotropy = 0.5
 
 [node name="main" type="Node3D"]
 
 [node name="Player" parent="." instance=ExtResource("1_ig7tw")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 18.802685, 5.8267837, 12.852715)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.595251, 1.9456496, 12.852715)
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_ig7tw")
 
 [node name="CSGBox3D" type="CSGBox3D" parent="."]
+use_collision = true
+size = Vector3(100, 1, 100)
+
+[node name="CSGBox3D10" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 49.350834, 0)
 use_collision = true
 size = Vector3(100, 1, 100)
 
@@ -38,13 +46,25 @@ size = Vector3(100, 1, 100)
 use_collision = true
 size = Vector3(10, 10, 10)
 
-[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
-environment = SubResource("Environment_ig7tw")
+[node name="CSGBox3D11" type="CSGBox3D" parent="."]
+transform = Transform3D(0.6629948, 0.05858879, 0, -0.31049892, 0.12510209, 0, 0, 0, 1.2260722, 7.4102974, 1.4268761, 0)
+use_collision = true
+size = Vector3(10, 10, 10)
 
 [node name="CSGBox3D3" type="CSGBox3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6.862846, 0.96077895, 0)
 use_collision = true
 size = Vector3(2, 0.5, 2)
+
+[node name="CSGBox3D8" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6.862846, 24.790686, -49.755676)
+use_collision = true
+size = Vector3(100, 50, 2)
+
+[node name="CSGBox3D9" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 43.44317, 24.790686, -0.14240265)
+use_collision = true
+size = Vector3(2, 50, 100)
 
 [node name="CSGBox3D4" type="CSGBox3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6.862846, 1.6508596, 2.3448093)
@@ -65,3 +85,7 @@ size = Vector3(2, 0.5, 2)
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.0576906, 3.7087016, 6.8651204)
 use_collision = true
 size = Vector3(2, 0.5, 2)
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.97198975, -0.12933475, -0.19623587, 0.23502338, 0.53489166, 0.8115756, 0, -0.83496314, 0.5503059, -34.59649, 10.23407, -28.385939)
+light_color = Color(1, 0.7006644, 0.71675515, 1)
