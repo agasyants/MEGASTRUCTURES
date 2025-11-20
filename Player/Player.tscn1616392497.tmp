@@ -1,8 +1,7 @@
-[gd_scene load_steps=8 format=3 uid="uid://b1bf3mrg51wxi"]
+[gd_scene load_steps=7 format=3 uid="uid://b1bf3mrg51wxi"]
 
 [ext_resource type="Script" uid="uid://8qfsbuy55ivo" path="res://Player/Player.gd" id="1_3qydi"]
 [ext_resource type="Script" uid="uid://ub5icknd4fm1" path="res://Player/GrapplingHook.gd" id="2_q3lat"]
-[ext_resource type="Script" uid="uid://c8gamdytm5yg0" path="res://Player/Boots.gd" id="3_tok1r"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_l2ndj"]
 
@@ -52,13 +51,6 @@ grow_vertical = 2
 mouse_filter = 2
 color = Color(1, 1, 1, 0.37254903)
 
-[node name="Boots" type="ColorRect" parent="CanvasLayer"]
-offset_left = 15.0
-offset_top = 244.0
-offset_right = 62.0
-offset_bottom = 306.0
-color = Color(1, 1, 1, 0.29803923)
-
 [node name="GrapplingHook" type="Node3D" parent="."]
 script = ExtResource("2_q3lat")
 
@@ -79,27 +71,12 @@ mesh = SubResource("SphereMesh_q3lat")
 
 [node name="PullSound" type="AudioStreamPlayer3D" parent="GrapplingHook"]
 
-[node name="Boots" type="Node3D" parent="."]
-script = ExtResource("3_tok1r")
-
-[node name="ForwardCast" type="RayCast3D" parent="Boots"]
-transform = Transform3D(0.9936252, 0.07367529, -0.08532955, -0.11239866, 0.5889982, -0.80027974, -0.0087018795, 0.8047689, 0.59352446, 0, 0.30314487, -0.20774078)
+[node name="ForwardCast" type="RayCast3D" parent="."]
+transform = Transform3D(0.9936251, 0.07367528, -0.08532954, -0.112734996, 0.64936006, -0.7520786, 0, 0.75690377, 0.65352625, 0, 0.30314487, -0.15170097)
 debug_shape_custom_color = Color(1, 0, 0, 1)
 debug_shape_thickness = 3
 
-[node name="BackCast" type="RayCast3D" parent="Boots"]
+[node name="BackCast" type="RayCast3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 0.819152, 0.5735764, 0, -0.5735764, 0.819152, 0, 0, -0.23380646)
 debug_shape_custom_color = Color(1, 0, 0, 1)
-debug_shape_thickness = 3
-
-[node name="GrabUp" type="RayCast3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, -4.371139e-08, -1, 0, 1, -4.371139e-08, 0, 1, 0)
-target_position = Vector3(0, -0.8, 0)
-debug_shape_custom_color = Color(0, 0, 1, 1)
-debug_shape_thickness = 3
-
-[node name="GrabDown" type="RayCast3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, -4.371139e-08, -1, 0, 1, -4.371139e-08, 0, 0.5, 0)
-target_position = Vector3(0, -0.7, 0)
-debug_shape_custom_color = Color(0, 0, 1, 1)
 debug_shape_thickness = 3

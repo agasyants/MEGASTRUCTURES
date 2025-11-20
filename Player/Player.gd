@@ -36,12 +36,16 @@ var jetpack_recharge_rate := 20.0       # recharge speed on ground
 var jetpack_recharge_delay := 0.5       # delay before recharge starts
 var jetpack_recharge_timer := 0.0
 var jetpack_max_velocity := 20.0        # cap on total velocity when using jetpack
-var jetpack_min_fuel_to_activate := 20.0
 var is_using_jetpack := false
 var is_recharging := false
 
+var grabbing := false
+
 @onready var cam := $Camera3D
-@onready var fuel_bar := $CanvasLayer/FuelBar  # add CanvasLayer > ProgressBar in scene
+@onready var fuel_bar := $CanvasLayer/FuelBar
+@onready var Boots := $Boots
+@onready var gu = $GrabUp
+@onready var gd = $GrabDown
 
 func _ready() -> void:
 	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
@@ -77,22 +81,23 @@ func jump():
 	velocity = velocity + vector * jump_speed
 	coyote_timer = 0.0
 	jump_buffer_timer = 0.0
-	$Node3D.disable_boots()
+	Boots.disable_boots()
 
 func start_jetpack():
-	if jetpack_fuel >= jetpack_min_fuel_to_activate:
+	if jetpack_fuel >= 0:
 		jetpack_fuel -= first_fuel_consumption
 		is_recharging = false
 		is_using_jetpack = true
 		
 		if velocity.dot(vector) < 0:  # если движемся вниз относительно "вверх"
-			velocity = velocity.project(vector) * 0.4
+			velocity = velocity + velocity.length() * vector * 0.4
 
 func end_jetpack():
 	if is_using_jetpack:
 		is_using_jetpack = false
 
 func _physics_process(delta: float) -> void:
+	_update_ledge_grab(delta)
 	_update_rotation(delta)
 	_update_timers(delta)
 	_apply_jetpack(delta)
@@ -103,25 +108,21 @@ func _physics_process(delta: float) -> void:
 func _process(_delta: float) -> void:
 	_update_ui()
 
-#func _update_rotation(delta:float):
-	#vector = vector.lerp(target_vector, delta*3).normalized()
-	#self.rotation = Vector3(0,0,0)
-	#var dir1 = basis.y
-	#var dir2 = vector
-	#var axis = dir1.cross(dir2)
-	#if axis != Vector3.ZERO:
-		#self.rotate(axis.normalized(), vector.angle_to(dir1))
-	#self.rotate(vector, rotator)
-
 func _update_rotation(delta: float):
 	vector = vector.lerp(target_vector, delta * 3).normalized()
 	var align_quat = Quaternion(Vector3.UP, vector)
 	var twist_quat = Quaternion(vector, rotator)
 	self.basis = Basis(twist_quat * align_quat)
 
+func _update_ledge_grab(_delta: float) -> void:
+	if !gu.is_colliding() and gd.is_colliding():
+		grabbing = true
+	else:
+		grabbing = false
+
 func _update_timers(delta: float) -> void:
 	# coyote time: grace period after leaving platform
-	if is_on_floor() or $Node3D.boots_enabled:
+	if is_on_floor() or Boots.boots_enabled:
 		coyote_timer = coyote_time
 		if !on_ground:
 			on_ground = true
@@ -145,7 +146,7 @@ func _update_timers(delta: float) -> void:
 
 func _apply_gravity(delta: float) -> void:
 	if not is_on_floor():
-		if $Node3D.boots_enabled:
+		if Boots.boots_enabled:
 			velocity -=  vector * gravity * delta * 4
 		else:
 			velocity -=  vector * gravity * delta
@@ -194,7 +195,7 @@ func _apply_movement(delta: float) -> void:
 		var forward := -transform.basis.z
 		var right := transform.basis.x
 		input_dir = (forward * input_vec.y + right * input_vec.x).normalized()
-		$Node3D.rotation.y = input_vec.angle() - PI/2
+		Boots.rotation.y = input_vec.angle() - PI/2
 	
 	var accel := move_acceleration
 	var friction := move_friction
@@ -203,15 +204,19 @@ func _apply_movement(delta: float) -> void:
 		accel *= air_control
 		friction = air_friction
 	
-	if $Node3D.boots_enabled:
+	if Boots.boots_enabled:
 		if input_dir != Vector3.ZERO:
 			velocity = lerp(velocity, input_dir * move_max_speed, accel * delta)
+			#if grabbing:
+				#velocity += 80 * vector * delta
 		else:
 			velocity = lerp(velocity, Vector3.ZERO, friction * delta)
 	else:
 		if input_dir != Vector3.ZERO:
 			velocity.x = move_toward(velocity.x, input_dir.x * move_max_speed, accel * delta)
 			velocity.z = move_toward(velocity.z, input_dir.z * move_max_speed, accel * delta)
+			#if grabbing and velocity.dot(vector) >= 0.0:
+				#velocity += 70 * vector * delta
 		else:
 			velocity.x = move_toward(velocity.x, 0.0, friction * delta)
 			velocity.z = move_toward(velocity.z, 0.0, friction * delta)
