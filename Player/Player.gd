@@ -107,6 +107,7 @@ func _physics_process(delta: float) -> void:
 
 func _process(_delta: float) -> void:
 	_update_ui()
+	DebugLayer.Log(Engine.get_frames_per_second(), "FPS: ")
 
 func _update_rotation(delta: float):
 	vector = vector.lerp(target_vector, delta * 3).normalized()
@@ -215,7 +216,8 @@ func _apply_movement(delta: float) -> void:
 		if input_dir != Vector3.ZERO:
 			velocity.x = move_toward(velocity.x, input_dir.x * move_max_speed, accel * delta)
 			velocity.z = move_toward(velocity.z, input_dir.z * move_max_speed, accel * delta)
-			#if grabbing and velocity.dot(vector) >= 0.0:
+			DebugLayer.Log(velocity.dot(vector))
+			#if grabbing and velocity.dot(vector) <= 0.01:
 				#velocity += 70 * vector * delta
 		else:
 			velocity.x = move_toward(velocity.x, 0.0, friction * delta)
