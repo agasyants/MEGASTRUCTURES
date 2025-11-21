@@ -29,7 +29,8 @@ var camera_pitch_max := 85.0
 # --- JETPACK SETTINGS ---
 var jetpack_fuel := 100.0
 var jetpack_fuel_max := 100.0
-var jetpack_thrust := 30.0              # force of thrust
+var jetpack_thrust_up := 30.0              # force of thrust
+var jetpack_thrust_down := 43.0
 var first_fuel_consumption := 0.0
 var jetpack_fuel_consumption := 45.0    # fuel units per second
 var jetpack_recharge_rate := 20.0       # recharge speed on ground
@@ -40,6 +41,11 @@ var is_using_jetpack := false
 var is_recharging := false
 
 var grabbing := false
+var was_grabbing := false
+
+const JUMP_CUT_MULTIPLIER := 0.6
+const LEDGE_GRAB_VELOCITY_THRESHOLD := 1.2
+
 
 @onready var cam := $Camera3D
 @onready var fuel_bar := $CanvasLayer/FuelBar
@@ -73,7 +79,7 @@ func _input(event: InputEvent) -> void:
 		# Cut jump
 		if velocity.y > 0 and !is_using_jetpack:
 			# reduce upward velocity to make shorter jump
-			velocity.y *= 0.6
+			velocity.y *= JUMP_CUT_MULTIPLIER
 		end_jetpack()
 		get_viewport().set_input_as_handled()
 
@@ -84,13 +90,10 @@ func jump():
 	Boots.disable_boots()
 
 func start_jetpack():
-	if jetpack_fuel >= 0:
+	if jetpack_fuel > 0:
 		jetpack_fuel -= first_fuel_consumption
 		is_recharging = false
 		is_using_jetpack = true
-		
-		if velocity.dot(vector) < 0:  # если движемся вниз относительно "вверх"
-			velocity = velocity + velocity.length() * vector * 0.4
 
 func end_jetpack():
 	if is_using_jetpack:
@@ -117,9 +120,16 @@ func _update_rotation(delta: float):
 
 func _update_ledge_grab(_delta: float) -> void:
 	if !gu.is_colliding() and gd.is_colliding():
-		grabbing = true
+		var angle: float = gd.get_collision_normal().angle_to(vector)
+		if 1.4 < angle and angle < 1.7 and !Boots.boots_enabled:
+			if !was_grabbing and velocity.dot(vector) <= LEDGE_GRAB_VELOCITY_THRESHOLD:
+				grabbing = true
+			was_grabbing = true
 	else:
-		grabbing = false
+		if was_grabbing:
+			velocity -= vector * 3
+			grabbing = false
+		was_grabbing = false
 
 func _update_timers(delta: float) -> void:
 	# coyote time: grace period after leaving platform
@@ -176,8 +186,12 @@ func _apply_jetpack(delta: float) -> void:
 		
 		# apply thrust in camera look direction
 		var look_dir = -cam.global_transform.basis.z
-		var thrust_dir = look_dir.lerp(Vector3.UP, 0.8).normalized()
-		velocity += thrust_dir * jetpack_thrust * delta
+		var thrust_dir = look_dir.lerp(vector, 0.8).normalized()
+		var dot = velocity.dot(vector)
+		var thrust = jetpack_thrust_down - dot
+		if dot > 0.0:
+			thrust = jetpack_thrust_up - dot
+		velocity += thrust_dir * thrust * delta
 		
 		# cap maximum velocity to prevent infinite acceleration
 		if velocity.length() > jetpack_max_velocity:
@@ -208,8 +222,6 @@ func _apply_movement(delta: float) -> void:
 	if Boots.boots_enabled:
 		if input_dir != Vector3.ZERO:
 			velocity = lerp(velocity, input_dir * move_max_speed, accel * delta)
-			#if grabbing:
-				#velocity += 80 * vector * delta
 		else:
 			velocity = lerp(velocity, Vector3.ZERO, friction * delta)
 	else:
@@ -217,8 +229,8 @@ func _apply_movement(delta: float) -> void:
 			velocity.x = move_toward(velocity.x, input_dir.x * move_max_speed, accel * delta)
 			velocity.z = move_toward(velocity.z, input_dir.z * move_max_speed, accel * delta)
 			DebugLayer.Log(velocity.dot(vector))
-			#if grabbing and velocity.dot(vector) <= 0.01:
-				#velocity += 70 * vector * delta
+			if grabbing:
+				velocity = 500 * vector * delta
 		else:
 			velocity.x = move_toward(velocity.x, 0.0, friction * delta)
 			velocity.z = move_toward(velocity.z, 0.0, friction * delta)
