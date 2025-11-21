@@ -1,8 +1,9 @@
-[gd_scene load_steps=8 format=3 uid="uid://b1bf3mrg51wxi"]
+[gd_scene load_steps=9 format=3 uid="uid://b1bf3mrg51wxi"]
 
 [ext_resource type="Script" uid="uid://8qfsbuy55ivo" path="res://Player/Player.gd" id="1_3qydi"]
 [ext_resource type="Script" uid="uid://ub5icknd4fm1" path="res://Player/GrapplingHook.gd" id="2_q3lat"]
 [ext_resource type="Script" uid="uid://c8gamdytm5yg0" path="res://Player/Boots.gd" id="3_tok1r"]
+[ext_resource type="PackedScene" uid="uid://8san620le5t6" path="res://Player/Hook/Rope.tscn" id="4_ddoul"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_l2ndj"]
 
@@ -103,3 +104,17 @@ transform = Transform3D(1, 0, 0, 0, -4.3711392e-08, -1.0000001, 0, 1.0000001, -4
 target_position = Vector3(0, -0.8, 0)
 debug_shape_custom_color = Color(0, 0, 1, 1)
 debug_shape_thickness = 3
+
+[node name="Rope" parent="." instance=ExtResource("4_ddoul")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.34463644, 1.2558796, 0)
+rope_length = null
+segment_count = null
+gravity = null
+damping = null
+stiffness = null
+constraint_iterations = null
+sub_steps = null
+collision_friction = null
+rope_radius = null
+check_corners = null
+rope_color = null

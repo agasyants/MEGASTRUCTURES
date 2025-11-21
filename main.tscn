@@ -28,7 +28,7 @@ volumetric_fog_anisotropy = 0.5
 [node name="main" type="Node3D"]
 
 [node name="Player" parent="." instance=ExtResource("1_ig7tw")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.595251, 1.9456496, 12.852715)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.595251, 28.329214, 12.852715)
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
 environment = SubResource("Environment_ig7tw")
