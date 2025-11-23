@@ -59,7 +59,7 @@ color = Color(1, 1, 1, 0.29803923)
 script = ExtResource("3_tok1r")
 
 [node name="ForwardCast" type="RayCast3D" parent="Boots"]
-transform = Transform3D(0.9936252, 0.07367529, -0.08532955, -0.11239866, 0.5889982, -0.80027974, -0.0087018795, 0.8047689, 0.59352446, 0, 0.30314487, -0.20774078)
+transform = Transform3D(1.0000001, 0, 0, 0, 0.59902364, -0.80073136, 0, 0.80073136, 0.59902364, 0, 0.30314487, -0.20774078)
 debug_shape_custom_color = Color(1, 0, 0, 1)
 debug_shape_thickness = 3
 
@@ -75,7 +75,7 @@ debug_shape_custom_color = Color(0, 0, 1, 1)
 debug_shape_thickness = 3
 
 [node name="GrabDown" type="RayCast3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, -4.3711392e-08, -1.0000001, 0, 1.0000001, -4.3711392e-08, 0, 0.4, 0)
+transform = Transform3D(1, 0, 0, 0, -4.3711392e-08, -1.0000001, 0, 1.0000001, -4.3711392e-08, 0, 0.27423134, 0)
 target_position = Vector3(0, -0.8, 0)
 debug_shape_custom_color = Color(0, 0, 1, 1)
 debug_shape_thickness = 3

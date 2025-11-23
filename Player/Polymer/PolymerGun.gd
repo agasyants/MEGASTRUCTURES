@@ -3,7 +3,6 @@ extends Node3D
 @export var projectile_scene: PackedScene
 @export var launch_force: float = 20.0
 @export var fire_rate: float = 0.5
-
 @onready var player: CharacterBody3D = get_parent().get_parent()
 
 var can_fire: bool = true

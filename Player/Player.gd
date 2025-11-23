@@ -15,9 +15,9 @@ var target_vector := Vector3(0,1,0)
 var rotator := 0.0
 
 # --- PLATFORMER FEEL IMPROVEMENTS ---
-var coyote_time := 0.15              # seconds after leaving platform when you can still jump
+var coyote_time := 0.15
 var coyote_timer := 0.0
-var jump_buffer_time := 0.1          # if you press jump slightly before landing
+var jump_buffer_time := 0.1
 var jump_buffer_timer := 0.0
 
 # --- MOUSE LOOK SETTINGS ---
@@ -29,13 +29,13 @@ var camera_pitch_max := 85.0
 # --- JETPACK SETTINGS ---
 var jetpack_fuel := 100.0
 var jetpack_fuel_max := 100.0
-var jetpack_thrust_up := 30.0              # force of thrust
+var jetpack_thrust_up := 30.0           # force of thrust
 var jetpack_thrust_down := 43.0
 var first_fuel_consumption := 0.0
 var jetpack_fuel_consumption := 45.0    # fuel units per second
 var jetpack_recharge_rate := 20.0       # recharge speed on ground
-var jetpack_recharge_delay := 0.5       # delay before recharge starts
-var jetpack_recharge_timer := 0.0
+var jetpack_recharge_delay := 1.5       # delay before recharge starts
+var jetpack_recharge_timer := 0.0       # just timer
 var jetpack_max_velocity := 20.0        # cap on total velocity when using jetpack
 var is_using_jetpack := false
 var is_recharging := false
@@ -49,7 +49,7 @@ const LEDGE_GRAB_VELOCITY_THRESHOLD := 1.2
 
 @onready var cam := $Camera3D
 @onready var fuel_bar := $CanvasLayer/FuelBar
-@onready var Boots := $Boots
+@onready var boots := $Boots
 @onready var gu = $GrabUp
 @onready var gd = $GrabDown
 
@@ -62,7 +62,7 @@ func _ready() -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseMotion:
-		rotator -= deg_to_rad(event.relative.x * mouse_sensitivity)
+		rotate_object_local(Vector3.UP, deg_to_rad(-event.relative.x * mouse_sensitivity))
 		camera_pitch -= event.relative.y * mouse_sensitivity
 		camera_pitch = clamp(camera_pitch, camera_pitch_min, camera_pitch_max)
 		cam.rotation.x = deg_to_rad(camera_pitch)
@@ -78,16 +78,18 @@ func _input(event: InputEvent) -> void:
 	elif event.is_action_released("jump"):
 		# Cut jump
 		if velocity.y > 0 and !is_using_jetpack:
-			# reduce upward velocity to make shorter jump
 			velocity.y *= JUMP_CUT_MULTIPLIER
 		end_jetpack()
 		get_viewport().set_input_as_handled()
 
 func jump():
-	velocity = velocity + vector * jump_speed
+	if boots.boots_enabled:
+		velocity = velocity + vector * jump_speed * 1.2
+		boots.disable_boots()
+	else:
+		velocity = velocity + vector * jump_speed
 	coyote_timer = 0.0
 	jump_buffer_timer = 0.0
-	Boots.disable_boots()
 
 func start_jetpack():
 	if jetpack_fuel > 0:
@@ -98,6 +100,7 @@ func start_jetpack():
 func end_jetpack():
 	if is_using_jetpack:
 		is_using_jetpack = false
+		is_recharging = true
 
 func _physics_process(delta: float) -> void:
 	_update_ledge_grab(delta)
@@ -112,16 +115,43 @@ func _process(_delta: float) -> void:
 	_update_ui()
 	DebugLayer.Log(Engine.get_frames_per_second(), "FPS: ")
 
+
 func _update_rotation(delta: float):
-	vector = vector.lerp(target_vector, delta * 3).normalized()
-	var align_quat = Quaternion(Vector3.UP, vector)
-	var twist_quat = Quaternion(vector, rotator)
-	self.basis = Basis(twist_quat * align_quat)
+	# 1. Интерполируем вектор гравитации (как у вас было, но чуть быстрее для отзывчивости)
+	vector = vector.lerp(target_vector, delta * 5.0).normalized()
+	
+	# 2. Вычисляем текущий "верх" персонажа
+	var current_up = transform.basis.y
+	
+	# 3. Если векторы уже почти равны, ничего не делаем (избегаем дрожания)
+	if current_up.distance_squared_to(vector) < 0.00001:
+		return
+
+	# 4. Находим кватернион, который поворачивает current_up в vector по кратчайшему пути.
+	# cross product дает ось вращения
+	var axis = current_up.cross(vector)
+	
+	# Если ось нулевая (векторы параллельны или противоположны), обрабатываем отдельно
+	if axis.length_squared() < 0.00001:
+		# Если векторы противоположны (переход на потолок с пола одним прыжком),
+		# нужно повернуть на 180 вокруг любой перпендикулярной оси (например, Z)
+		if current_up.dot(vector) < 0:
+			transform.basis = transform.basis.rotated(transform.basis.z, PI)
+	else:
+		axis = axis.normalized()
+		# acos от скалярного произведения дает угол
+		var angle = acos(clamp(current_up.dot(vector), -1.0, 1.0))
+		var q = Quaternion(axis, angle)
+		# 5. Применяем этот поворот к текущему базису
+		transform.basis = Basis(q) * transform.basis
+		
+	# 6. Обязательно ортонормируем, чтобы избежать искажений масштаба со временем
+	transform.basis = transform.basis.orthonormalized()
 
 func _update_ledge_grab(_delta: float) -> void:
 	if !gu.is_colliding() and gd.is_colliding():
 		var angle: float = gd.get_collision_normal().angle_to(vector)
-		if 1.4 < angle and angle < 1.7 and !Boots.boots_enabled:
+		if 1.4 < angle and angle < 1.7 and !boots.boots_enabled:
 			if !was_grabbing and velocity.dot(vector) <= LEDGE_GRAB_VELOCITY_THRESHOLD:
 				grabbing = true
 			was_grabbing = true
@@ -133,7 +163,7 @@ func _update_ledge_grab(_delta: float) -> void:
 
 func _update_timers(delta: float) -> void:
 	# coyote time: grace period after leaving platform
-	if is_on_floor() or Boots.boots_enabled:
+	if is_on_floor() or boots.boots_enabled:
 		coyote_timer = coyote_time
 		if !on_ground:
 			on_ground = true
@@ -157,7 +187,7 @@ func _update_timers(delta: float) -> void:
 
 func _apply_gravity(delta: float) -> void:
 	if not is_on_floor():
-		if Boots.boots_enabled:
+		if boots.boots_enabled:
 			velocity -=  vector * gravity * delta * 4
 		else:
 			velocity -=  vector * gravity * delta
@@ -173,18 +203,16 @@ func _apply_gravity(delta: float) -> void:
 
 func landed():
 	if !is_using_jetpack:
-		is_recharging = true
+		jetpack_recharge_timer = jetpack_recharge_delay
 
 func _apply_jetpack(delta: float) -> void:
 	if is_using_jetpack:
 		jetpack_recharge_timer = 0.0
-		# consume fuel
 		jetpack_fuel -= jetpack_fuel_consumption * delta
 		if jetpack_fuel <= 0:
 			end_jetpack()
 		jetpack_fuel = max(jetpack_fuel, 0.0)
 		
-		# apply thrust in camera look direction
 		var look_dir = -cam.global_transform.basis.z
 		var thrust_dir = look_dir.lerp(vector, 0.8).normalized()
 		var dot = velocity.dot(vector)
@@ -193,7 +221,6 @@ func _apply_jetpack(delta: float) -> void:
 			thrust = jetpack_thrust_up - dot
 		velocity += thrust_dir * thrust * delta
 		
-		# cap maximum velocity to prevent infinite acceleration
 		if velocity.length() > jetpack_max_velocity:
 			velocity = velocity.normalized() * jetpack_max_velocity
 		
@@ -210,7 +237,7 @@ func _apply_movement(delta: float) -> void:
 		var forward := -transform.basis.z
 		var right := transform.basis.x
 		input_dir = (forward * input_vec.y + right * input_vec.x).normalized()
-		Boots.rotation.y = input_vec.angle() - PI/2
+		boots.rotation.y = input_vec.angle() - PI/2
 	
 	var accel := move_acceleration
 	var friction := move_friction
@@ -219,7 +246,7 @@ func _apply_movement(delta: float) -> void:
 		accel *= air_control
 		friction = air_friction
 	
-	if Boots.boots_enabled:
+	if boots.boots_enabled:
 		if input_dir != Vector3.ZERO:
 			velocity = lerp(velocity, input_dir * move_max_speed, accel * delta)
 		else:
@@ -228,7 +255,6 @@ func _apply_movement(delta: float) -> void:
 		if input_dir != Vector3.ZERO:
 			velocity.x = move_toward(velocity.x, input_dir.x * move_max_speed, accel * delta)
 			velocity.z = move_toward(velocity.z, input_dir.z * move_max_speed, accel * delta)
-			DebugLayer.Log(velocity.dot(vector))
 			if grabbing:
 				velocity = 500 * vector * delta
 		else:

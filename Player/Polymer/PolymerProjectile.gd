@@ -22,16 +22,16 @@ func _integrate_forces(state: PhysicsDirectBodyState3D) -> void:
 		spawn_blob(pos, normal, collider)
 		has_hit = true
 
-func spawn_blob(pos: Vector3, normal: Vector3, _hit_body: Object) -> void:
-	call_deferred("_deferred_spawn", pos, normal)
+func spawn_blob(pos: Vector3, normal: Vector3, hit_body: Object) -> void:
+	call_deferred("_deferred_spawn", pos, normal, hit_body)
 
-func _deferred_spawn(pos: Vector3, normal: Vector3) -> void:
+func _deferred_spawn(pos: Vector3, normal: Vector3, parent_body: Node3D) -> void:
 	var blob = blob_scene.instantiate() as Blob
-	get_tree().current_scene.add_child(blob)
 	
-	blob.global_position = pos + (normal * 0.3)
-	
-	if blob.has_method("setup"):
-		blob.setup(blob.global_position, normal)
-	
+	if parent_body:
+		parent_body.add_child(blob)
+		blob.position = parent_body.to_local(pos + normal * 0.3)
+	else:
+		get_tree().current_scene.add_child(blob)
+		blob.global_position = pos + normal * 0.3
 	queue_free()

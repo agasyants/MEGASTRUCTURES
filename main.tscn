@@ -1,6 +1,7 @@
-[gd_scene load_steps=5 format=3 uid="uid://d2gj4sqe2dbi"]
+[gd_scene load_steps=6 format=3 uid="uid://d2gj4sqe2dbi"]
 
 [ext_resource type="PackedScene" uid="uid://b1bf3mrg51wxi" path="res://Player/Player.tscn" id="1_ig7tw"]
+[ext_resource type="Script" uid="uid://bqio2v6fbga7u" path="res://test/cylinder.gd" id="2_0xm2m"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_ig7tw"]
 
@@ -46,6 +47,11 @@ size = Vector3(100, 1, 100)
 use_collision = true
 size = Vector3(10, 10, 10)
 
+[node name="CSGBox3D12" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 8.091261, -11.887116)
+use_collision = true
+size = Vector3(5, 5, 5)
+
 [node name="CSGBox3D11" type="CSGBox3D" parent="."]
 transform = Transform3D(0.6629948, 0.05858879, 0, -0.31049892, 0.12510209, 0, 0, 0, 1.2260722, 7.4102974, 1.4268761, 0)
 use_collision = true
@@ -88,9 +94,17 @@ size = Vector3(2, 0.5, 2)
 
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
 transform = Transform3D(0.97198975, -0.12933475, -0.19623587, 0.23502338, 0.53489166, 0.8115756, 0, -0.83496314, 0.5503059, -34.59649, 10.23407, -28.385939)
-light_color = Color(1, 0.7006644, 0.71675515, 1)
+light_color = Color(0.6612688, 0.82230884, 0.89509785, 1)
 
 [node name="Node3D" type="Node3D" parent="."]
 
 [node name="Node3D2" type="Node3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 18.907276, 0)
+
+[node name="CSGCylinder3D" type="CSGCylinder3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -10.750111, 10.742443, -10.400625)
+use_collision = true
+radius = 3.0
+height = 4.0
+sides = 32
+script = ExtResource("2_0xm2m")
