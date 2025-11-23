@@ -1,0 +1,26 @@
+[gd_scene load_steps=5 format=3 uid="uid://ctlbrfmd1e8a8"]
+
+[ext_resource type="Script" uid="uid://vu6x7ddnupd8" path="res://Player/Polymer/PolymerProjectile.gd" id="1_2ftnq"]
+[ext_resource type="PackedScene" uid="uid://detsp3ol3wise" path="res://Player/Polymer/BolymerBlob.tscn" id="2_ctf1f"]
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_2k0gg"]
+radius = 0.2
+
+[sub_resource type="SphereMesh" id="SphereMesh_ctf1f"]
+radius = 0.1
+height = 0.2
+
+[node name="PolymerProjectile" type="RigidBody3D"]
+collision_layer = 2
+mass = 0.5
+continuous_cd = true
+contact_monitor = true
+max_contacts_reported = 1
+script = ExtResource("1_2ftnq")
+blob_scene = ExtResource("2_ctf1f")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+shape = SubResource("SphereShape3D_2k0gg")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
+mesh = SubResource("SphereMesh_ctf1f")

@@ -1,0 +1,10 @@
+[gd_scene load_steps=2 format=3 uid="uid://detsp3ol3wise"]
+
+[ext_resource type="Script" uid="uid://b76y0kmepptmu" path="res://Player/Polymer/PolymerBlob.gd" id="1_bghw3"]
+
+[node name="BolymerBlob" type="StaticBody3D"]
+script = ExtResource("1_bghw3")
+
+[node name="CSGBox3D" type="CSGBox3D" parent="."]
+use_collision = true
+size = Vector3(2, 2, 2)

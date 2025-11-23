@@ -28,7 +28,7 @@ volumetric_fog_anisotropy = 0.5
 [node name="main" type="Node3D"]
 
 [node name="Player" parent="." instance=ExtResource("1_ig7tw")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.595251, 28.329214, 12.852715)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.39587498, 8.417084, 7.759012)
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
 environment = SubResource("Environment_ig7tw")
@@ -89,3 +89,8 @@ size = Vector3(2, 0.5, 2)
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
 transform = Transform3D(0.97198975, -0.12933475, -0.19623587, 0.23502338, 0.53489166, 0.8115756, 0, -0.83496314, 0.5503059, -34.59649, 10.23407, -28.385939)
 light_color = Color(1, 0.7006644, 0.71675515, 1)
+
+[node name="Node3D" type="Node3D" parent="."]
+
+[node name="Node3D2" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 18.907276, 0)

@@ -1,29 +1,24 @@
-[gd_scene load_steps=9 format=3 uid="uid://b1bf3mrg51wxi"]
+[gd_scene load_steps=6 format=3 uid="uid://b1bf3mrg51wxi"]
 
 [ext_resource type="Script" uid="uid://8qfsbuy55ivo" path="res://Player/Player.gd" id="1_3qydi"]
-[ext_resource type="Script" uid="uid://ub5icknd4fm1" path="res://Player/GrapplingHook.gd" id="2_q3lat"]
+[ext_resource type="Script" uid="uid://bmet4ivhu4gck" path="res://Player/Polymer/PolymerGun.gd" id="3_ddoul"]
 [ext_resource type="Script" uid="uid://c8gamdytm5yg0" path="res://Player/Boots.gd" id="3_tok1r"]
-[ext_resource type="PackedScene" uid="uid://8san620le5t6" path="res://Player/Hook/Rope.tscn" id="4_ddoul"]
+[ext_resource type="PackedScene" uid="uid://ctlbrfmd1e8a8" path="res://Player/Polymer/PolymerProjectile.tscn" id="4_ddoul"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_l2ndj"]
-
-[sub_resource type="PlaceholderMesh" id="PlaceholderMesh_q3lat"]
-aabb = AABB(0, 0, 0, 0.2, 0.2, 0.2)
-
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_q3lat"]
-emission_enabled = true
-emission = Color(0.9999997, 0.16646665, 0.29795924, 1)
-
-[sub_resource type="SphereMesh" id="SphereMesh_q3lat"]
-material = SubResource("StandardMaterial3D_q3lat")
-radius = 0.1
-height = 0.2
 
 [node name="Player" type="CharacterBody3D"]
 script = ExtResource("1_3qydi")
 
 [node name="Camera3D" type="Camera3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.6558877, 0)
+fov = 80.0
+
+[node name="PolymerGun" type="Node3D" parent="Camera3D"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.00017338991, 0.09615004, -0.2442404)
+script = ExtResource("3_ddoul")
+projectile_scene = ExtResource("4_ddoul")
+launch_force = 30.0
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9976435, 0)
@@ -60,26 +55,6 @@ offset_right = 62.0
 offset_bottom = 306.0
 color = Color(1, 1, 1, 0.29803923)
 
-[node name="GrapplingHook" type="Node3D" parent="."]
-script = ExtResource("2_q3lat")
-
-[node name="RayCast3D" type="RayCast3D" parent="GrapplingHook"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.6434593, 0)
-
-[node name="RopeVisual" type="MeshInstance3D" parent="GrapplingHook"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.6247838, 0)
-mesh = SubResource("PlaceholderMesh_q3lat")
-
-[node name="HookVisual" type="MeshInstance3D" parent="GrapplingHook"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.6527972, 0)
-mesh = SubResource("SphereMesh_q3lat")
-
-[node name="FireSound" type="AudioStreamPlayer3D" parent="GrapplingHook"]
-
-[node name="ImpactSound" type="AudioStreamPlayer3D" parent="GrapplingHook"]
-
-[node name="PullSound" type="AudioStreamPlayer3D" parent="GrapplingHook"]
-
 [node name="Boots" type="Node3D" parent="."]
 script = ExtResource("3_tok1r")
 
@@ -104,17 +79,3 @@ transform = Transform3D(1, 0, 0, 0, -4.3711392e-08, -1.0000001, 0, 1.0000001, -4
 target_position = Vector3(0, -0.8, 0)
 debug_shape_custom_color = Color(0, 0, 1, 1)
 debug_shape_thickness = 3
-
-[node name="Rope" parent="." instance=ExtResource("4_ddoul")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.34463644, 1.2558796, 0)
-rope_length = null
-segment_count = null
-gravity = null
-damping = null
-stiffness = null
-constraint_iterations = null
-sub_steps = null
-collision_friction = null
-rope_radius = null
-check_corners = null
-rope_color = null

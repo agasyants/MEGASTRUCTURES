@@ -24,7 +24,7 @@ func create_labels(n:int):
 		var label = Label.new()
 		label.position.x = margin_x
 		label.position.y = margin_y + i * 100
-		label.text = "hello!"
+		label.text = ""
 		label.add_theme_font_size_override("font_size", 60)
 		labels.append(label)
 		self.add_child(label)

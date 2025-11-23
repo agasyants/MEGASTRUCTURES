@@ -1,4 +1,5 @@
 extends Node3D
+class_name Boots
 
 @onready var f_cast = $ForwardCast
 @onready var b_cast = $BackCast
